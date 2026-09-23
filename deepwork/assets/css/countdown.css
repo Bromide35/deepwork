@@ -1,0 +1,225 @@
+/* ============================================================
+   DeepWork · หน้านับถอยหลัง (เชือกชนวนติดไฟ)
+   ============================================================ */
+:root {
+  --ink-900:#06141B; --ink-800:#11212D; --ink-700:#253745;
+  --ink-500:#4A5C6A; --ink-300:#9BA8AB; --ink-100:#CCD0CF;
+  --flame:#FF7A2F; --flame-hi:#FFA65C; --flame-soft:#FFD1AC;
+  --ember:#FFE0A3; --danger:#FF4D3D;
+  --bg:var(--ink-900); --bg-2:var(--ink-800);
+  --line:var(--ink-100); --pill:var(--ink-700); --pill-tx:var(--ink-100);
+  --muted:var(--ink-300);
+  --font-num:'Gaegu', cursive;
+  --font-ui:'Itim', -apple-system, 'Noto Sans Thai', sans-serif;
+}
+[data-theme="paper"] {
+  --bg:#FBFAF8; --bg-2:#F2EFEA; --line:#3B3733;
+  --pill:#57504B; --pill-tx:#fff; --muted:#8A827B;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; }
+[hidden] { display: none !important; }
+body {
+  font-family:var(--font-ui); color:var(--line);
+  min-height:100dvh; overflow:hidden;
+  background:radial-gradient(70% 55% at 50% 42%, var(--bg-2), var(--bg) 70%);
+  transition:background .5s;
+}
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background:radial-gradient(60% 45% at 50% 78%, #FF7A2F22, transparent 70%);
+  opacity:0; transition:opacity .8s;
+}
+body.danger::after { opacity:1; }
+
+/* ===== เมนูบน ===== */
+.brushbar { position:fixed; top:0; left:0; right:0; z-index:40;
+            display:flex; align-items:center; gap:clamp(10px,3vw,32px);
+            padding:18px clamp(16px,4vw,40px); }
+.pills { display:flex; gap:clamp(10px,3vw,32px); flex:1; }
+.pill { position:relative; display:grid; place-items:center;
+        min-width:clamp(82px,12vw,160px); height:46px; padding:0 18px;
+        color:var(--pill-tx); text-decoration:none; font-size:clamp(.78rem,1.4vw,1rem);
+        background:var(--pill);
+        border-radius:40% 45% 42% 48% / 55% 50% 58% 52%;
+        transition:transform .18s, filter .18s; }
+.pill::after { content:''; position:absolute; left:16%; right:16%; bottom:12px;
+               height:2px; border-radius:2px; background:currentColor; opacity:.55; }
+.pill:hover { transform:translateY(-3px) rotate(-.8deg); }
+.pill.on { filter:brightness(1.3); }
+.burger { background:none; border:0; cursor:pointer; line-height:0; transition:transform .2s; }
+.burger:hover { transform:rotate(8deg) scale(1.06); }
+
+/* ===== drawer ===== */
+.drawer { position:fixed; top:0; right:0; bottom:0; width:min(310px,82vw);
+          background:var(--bg-2); border-left:2px solid var(--ink-500);
+          padding:82px 24px 24px; display:flex; flex-direction:column; gap:6px; z-index:60; }
+.drawer h2 { font-size:.85rem; color:var(--muted); margin-bottom:8px; }
+.drawer a, .drawer-btn { padding:13px 14px; border-radius:12px; color:var(--line);
+          text-decoration:none; font-size:.95rem; background:none; border:0;
+          text-align:left; cursor:pointer; font-family:inherit; }
+.drawer a:hover, .drawer-btn:hover { background:var(--ink-700); }
+.danger-link { color:var(--danger)!important; margin-top:auto; }
+.scrim { position:fixed; inset:0; background:#0009; z-index:50; }
+
+
+/* ===== เวทีกลาง (แก้ไขแล้ว) ===== */
+.stage { min-height:100dvh; display:flex; flex-direction:column;
+         align-items:center; justify-content:center;
+         gap:clamp(10px,2.4vh,24px); padding:104px 16px 48px; }
+
+/* จองความสูงไว้ล่วงหน้า ข้อความจะไม่กระโดดตอนเปลี่ยนคำ */
+.greet { color:var(--muted); font-size:.95rem; text-align:center;
+         min-height:1.5em; margin-bottom:clamp(2px,1.6vh,14px);
+         position:relative; z-index:2; }
+
+/* กริด 3 ช่อง: [เลขซ้าย] [นาฬิกา] [เลขขวา]
+   นาฬิกาจะอยู่กึ่งกลางเป๊ะตลอด ไม่ขยับตามความกว้างตัวเลขอีกต่อไป */
+.clockrow { display:grid; grid-template-columns:1fr auto 1fr;
+            align-items:center; gap:clamp(6px,2.5vw,38px);
+            width:min(1120px,96vw); }
+.digit-block { display:flex; flex-direction:column; align-items:center; min-width:0; }
+.clockrow > .digit-block:first-child { justify-self:end; }
+.clockrow > .digit-block:last-child  { justify-self:start; }
+
+/* min-width:2.4ch = ล็อกความกว้าง 2 หลักตายตัว + tabular-nums บังคับตัวเลขกว้างเท่ากัน */
+.digit { display:block;
+         font-family:var(--font-num); font-weight:700;
+         font-size:clamp(5rem,19vw,16rem);
+         line-height:1.02;
+         min-width:2.4ch; text-align:center;
+         font-variant-numeric:tabular-nums lining-nums;
+         font-feature-settings:"tnum" 1,"lnum" 1;
+         color:var(--flame); text-shadow:0 0 46px #FF7A2F30;
+         transition:color .4s; }
+
+.digit-key { font-size:clamp(.6rem,1.2vw,.78rem); color:var(--muted);
+             letter-spacing:.2em; text-transform:uppercase; margin-top:2px; }
+body.danger .digit { color:var(--danger); }
+.digit.pop { animation:pop .3s ease; }
+@keyframes pop { 50% { transform:scale(1.07); } }
+
+/* ===== นาฬิกา ===== */
+.alarm { position:relative; display:grid; place-items:center; }
+.alarm-svg { width:clamp(140px,21vw,250px); height:auto; overflow:visible; }
+.ink { fill:none; stroke:var(--line); stroke-width:4.5;
+       stroke-linecap:round; stroke-linejoin:round; color:var(--line); }
+.ink.thick { stroke-width:6; }
+.hand { stroke-width:5; transform-origin:110px 118px; }
+#handEnd { transition:transform .45s cubic-bezier(.34,1.3,.5,1); }
+.pivot { fill:var(--line); }
+.ticks path { stroke:var(--flame); stroke-width:6; stroke-linecap:round; }
+.wedge { fill:var(--flame); opacity:.92; }
+body.danger .wedge { fill:var(--danger); }
+
+.dot { position:absolute; left:50%; translate:-50% 0;
+       width:clamp(16px,2.4vw,28px); aspect-ratio:1; background:var(--flame);
+       border-radius:48% 52% 46% 54% / 52% 46% 54% 48%; }
+.dot-top { top:calc(-1*clamp(24px,4vw,44px)); }
+.dot-bottom { bottom:calc(-1*clamp(24px,4vw,44px)); }
+body[data-state="running"] .dot { animation:beat 1s steps(1) infinite; }
+@keyframes beat { 0%,49%{opacity:1;} 50%,100%{opacity:.3;} }
+
+.playmask { position:absolute; inset:0; display:grid; place-items:center;
+            background:none; border:0; cursor:pointer; }
+.playmask svg { width:48%; height:auto; fill:var(--flame-soft); opacity:.85;
+                transition:opacity .2s, transform .2s;
+                filter:drop-shadow(0 0 14px #FF7A2F55); }
+.playmask:hover svg { transform:scale(1.06); opacity:1; }
+body[data-state="running"] .playmask svg { opacity:0; }
+body[data-state="running"] .playmask:hover svg { opacity:.7; }
+body[data-state="finished"] .alarm-svg { animation:ring .12s linear infinite; }
+@keyframes ring { 0%,100%{transform:rotate(-3deg);} 50%{transform:rotate(3deg);} }
+
+/* ===== เชือกชนวน ===== */
+.fuse-wrap { position:relative; width:min(760px,92vw); margin-top:clamp(10px,3vh,30px); }
+.fuse-svg { width:100%; height:clamp(58px,9vh,90px); overflow:visible; }
+.fuse-ash { fill:none; stroke:var(--ink-500); stroke-width:9;
+            stroke-linecap:round; opacity:.45; stroke-dasharray:3 7; }
+.fuse-live { fill:none; stroke:var(--flame); stroke-width:11; stroke-linecap:round;
+             stroke-dasharray:100 100; filter:drop-shadow(0 0 8px #FF7A2F70);
+             transition:stroke-dasharray .35s linear; }
+.spark { fill:var(--flame-hi); opacity:0; transition:opacity .3s; }
+.spark-core { fill:var(--ember); }
+body[data-state="running"] .spark { opacity:1; animation:flicker .28s infinite alternate; }
+body[data-state="paused"] .spark { opacity:.45; }
+@keyframes flicker { from{transform:scale(.85) rotate(-10deg);} to{transform:scale(1.2) rotate(12deg);} }
+
+.embers { position:absolute; inset:0; pointer-events:none; }
+.ember { position:absolute; width:5px; height:5px; background:var(--ember);
+         border-radius:50%; animation:rise 1.5s ease-out forwards; }
+@keyframes rise { 0%{opacity:1; transform:translate(0,0) scale(1);}
+                  100%{opacity:0; transform:translate(var(--dx),-68px) scale(.2);} }
+
+/* ===== แผงตั้งค่า ===== */
+.setup { display:flex; flex-direction:column; align-items:center; gap:14px; }
+.preset-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.preset input { position:absolute; opacity:0; }
+.preset-box { display:flex; flex-direction:column; align-items:center;
+              min-width:86px; padding:9px 14px; border:2.5px solid var(--ink-500);
+              border-radius:46% 54% 50% 50% / 58% 52% 48% 42%;
+              cursor:pointer; transition:all .18s; }
+.preset-box b { font-family:var(--font-num); font-size:1.5rem; line-height:1; }
+.preset-box em { font-style:normal; font-size:.76rem; }
+.preset-box i { font-style:normal; font-size:.62rem; color:var(--muted); }
+.preset-box:hover { transform:translateY(-2px) rotate(-1deg); }
+.preset input:checked + .preset-box { border-color:var(--flame); background:#FF7A2F1F; color:var(--flame); }
+
+.setup-row { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; justify-content:center; }
+.f { display:grid; gap:4px; }
+.f label { font-size:.72rem; color:var(--muted); }
+.f input, .f select { padding:8px 12px; min-width:128px; background:var(--bg-2);
+                      border:2px solid var(--ink-500); border-radius:12px;
+                      color:var(--line); font-family:inherit; font-size:.9rem; }
+.f input:disabled { opacity:.4; }
+.chk { display:flex; align-items:center; gap:8px; font-size:.85rem; cursor:pointer; }
+.chk input { width:17px; height:17px; accent-color:var(--flame); }
+
+.spin { display:flex; align-items:stretch; gap:6px; }
+.spin input { min-width:84px; text-align:center;
+              font-family:var(--font-num); font-size:1.15rem; font-weight:700; }
+.spin-btn { width:36px; border:2px solid var(--ink-500); border-radius:11px;
+            background:none; color:var(--line); cursor:pointer;
+            font-family:inherit; font-size:1.25rem; line-height:1;
+            transition:all .15s; }
+.spin-btn:hover:not(:disabled) { border-color:var(--flame); color:var(--flame);
+                                 transform:translateY(-1px); }
+.spin-btn:disabled { opacity:.3; cursor:not-allowed; }
+.live { display:flex; align-items:center; gap:12px; font-size:.9rem; color:var(--muted); }
+.live b { color:var(--line); font-family:var(--font-num); font-size:1.15rem; }
+.ghost { background:none; border:2px solid var(--ink-500); color:var(--muted);
+         padding:5px 15px; border-radius:99px; cursor:pointer;
+         font-family:inherit; font-size:.82rem; }
+.ghost:hover { border-color:var(--danger); color:var(--danger); }
+
+.hint { font-size:.73rem; color:var(--muted); opacity:.65; text-align:center; }
+kbd { padding:1px 6px; border:1px solid var(--ink-500); border-radius:5px; font-size:.7rem; }
+
+.profile { position:fixed; left:26px; bottom:26px; z-index:30; }
+.profile img { border-radius:50%; object-fit:cover; border:2.5px solid var(--ink-500); transition:.2s; }
+.profile:hover img { transform:scale(1.1); border-color:var(--flame); }
+
+/* ===== หน้าจบ ===== */
+.finish { position:fixed; inset:0; z-index:70; display:grid; place-items:center;
+          background:#06141BE8; backdrop-filter:blur(6px); }
+.finish-card { text-align:center; padding:36px 40px; background:var(--bg-2);
+               border:3px solid var(--flame); border-radius:34px 28px 32px 26px; max-width:400px; }
+.finish-emoji { font-size:3.2rem; display:block; margin-bottom:8px; }
+.finish-card h2 { font-size:1.5rem; margin-bottom:8px; }
+.finish-card p { color:var(--muted); font-size:.95rem; line-height:1.7; }
+.finish-actions { display:flex; gap:10px; justify-content:center; margin-top:20px; }
+.btn-brush { padding:11px 26px; border:0; cursor:pointer; background:var(--flame);
+             color:#06141B; font-family:inherit; font-size:.95rem; text-decoration:none;
+             border-radius:44% 50% 46% 52% / 56% 48% 54% 46%; transition:transform .18s; }
+.btn-brush:hover { transform:translateY(-2px) rotate(-1deg); }
+.btn-brush.ghost { background:none; border:2px solid var(--ink-500); color:var(--line); }
+
+@media (max-width:680px) {
+  .stage { padding-top:96px; gap:10px; }
+  .clockrow { gap:2px; }
+  .digit { font-size:22vw; }
+  .alarm-svg { width:26vw; }
+  .pill { min-width:62px; height:38px; font-size:.7rem; padding:0 10px; }
+  .hint { display:none; }
+}
+@media (prefers-reduced-motion:reduce) { *,*::after { animation:none!important; transition:none!important; } }
